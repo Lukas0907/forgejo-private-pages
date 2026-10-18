@@ -23,7 +23,6 @@ services:
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__security__INSTALL_LOCK: "true"
       FORGEJO__service__DISABLE_REGISTRATION: "true"
-      FORGEJO__oauth2__ENABLE_ADDITIONAL_GRANT_SCOPES: "true"
       FORGEJO__actions__ENABLED: "true"
     volumes:
       - forgejo-data:/data
