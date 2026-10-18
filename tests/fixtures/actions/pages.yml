@@ -13,8 +13,9 @@ jobs:
       - run: |
           set -eu
           /usr/local/bin/build.sh
-          git checkout --orphan forgejo-pages   # new branch with no history
-          git rm -rf .                          # remove all files from main
-          git add -A                            # add files from build.sh
+          git branch -D forgejo-pages 2>/dev/null || true  # delete local branch if it exists
+          git checkout --orphan forgejo-pages              # new branch with no history
+          git rm -rf .                                     # remove all files from main
+          git add -A                                       # add files from build.sh
           git -c user.name=ci -c user.email=ci@localhost commit -q -m "pages: $FORGEJO_SHA"
           git push -qf origin HEAD:forgejo-pages
