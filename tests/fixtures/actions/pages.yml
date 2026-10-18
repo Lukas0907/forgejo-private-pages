@@ -1,0 +1,20 @@
+# .forgejo/workflows/pages.yml: run build.sh and publish its output to the `forgejo-pages` branch.
+# The branch holds exactly one commit with nothing but the build output at its root.
+# Each build creates that commit from scratch (no parent) and force-pushes it over the old one.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  pages:
+    runs-on: host                       # a runner label; adjust to your runner
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          set -eu
+          /usr/local/bin/build.sh
+          git checkout --orphan forgejo-pages   # new branch with no history
+          git rm -rf .                          # remove all files from main
+          git add -A                            # add files from build.sh
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "pages: $FORGEJO_SHA"
+          git push -qf origin HEAD:forgejo-pages

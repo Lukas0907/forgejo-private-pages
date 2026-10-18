@@ -1,0 +1,5 @@
+# Jobs with `runs-on: host` run directly in the runner container (has git and sh), no Docker needed.
+runner:
+  file: .runner
+  capacity: 1
+  labels: ["host:host"]

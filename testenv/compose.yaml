@@ -1,0 +1,93 @@
+# Throwaway test environment for the Hurl suite
+name: forgejo-private-pages
+
+networks:
+  pages:
+
+services:
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:17
+    ports:
+      - "3000:3000"
+    networks:
+      pages:
+        aliases: [git.test]
+    environment:
+      FORGEJO__server__DOMAIN: git.test
+      FORGEJO__server__ROOT_URL: http://git.test:3000/
+      FORGEJO__server__HTTP_ADDR: 0.0.0.0
+      FORGEJO__server__HTTP_PORT: "3000"
+      FORGEJO__server__DISABLE_SSH: "true"
+      FORGEJO__server__START_SSH_SERVER: "false"
+      FORGEJO__server__OFFLINE_MODE: "true"
+      FORGEJO__database__DB_TYPE: sqlite3
+      FORGEJO__security__INSTALL_LOCK: "true"
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__oauth2__ENABLE_ADDITIONAL_GRANT_SCOPES: "true"
+      FORGEJO__actions__ENABLED: "true"
+    volumes:
+      - forgejo-data:/data
+
+  setup:
+    image: codeberg.org/forgejo/forgejo:17
+    profiles: [setup]
+    networks: [pages]
+    entrypoint: ["sh", "/testenv/setup.sh"]
+    volumes:
+      - forgejo-data:/data
+      - ./setup.sh:/testenv/setup.sh:ro,Z
+      - ../tests/hurl/vars.env:/testenv/vars.env:ro,Z
+      - ../conf/oauth2-proxy.cfg:/testenv/oauth2-proxy.cfg.template:ro,Z
+      - oauth2-proxy-config:/out
+      - ../tests/fixtures/actions:/testenv/fixtures/actions:ro,Z
+      - runner-secret:/runner
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.0
+    networks:
+      pages:
+        aliases: [oauth2-proxy.test]
+    depends_on: [forgejo]
+    command: ["--config=/etc/oauth2-proxy/oauth2-proxy.cfg"]
+    restart: on-failure
+    volumes:
+      - oauth2-proxy-config:/etc/oauth2-proxy:ro
+
+  nginx:
+    image: docker.io/library/nginx:1.28
+    ports:
+      - "3001:3001"
+    networks:
+      pages:
+        aliases: [pages.test]
+    depends_on: [forgejo, oauth2-proxy]
+    volumes:
+      - ../conf/forgejo-private-pages.conf:/etc/nginx/conf.d/default.conf:ro,Z
+      - ../conf/forgejo-pages-mime.conf:/etc/nginx/forgejo-pages-mime.conf:ro,Z
+
+  runner:
+    image: code.forgejo.org/forgejo/runner:11
+    networks: [pages]
+    user: "0"                             # writes .runner to /data
+    depends_on: [forgejo]
+    entrypoint: ["sh", "-c", "apk add --no-cache nodejs zstd && sh /testenv/runner.sh"]
+    volumes:
+      - runner-secret:/secret:ro          # shared secret written by setup
+      - ./runner.sh:/testenv/runner.sh:ro,Z
+      - ./runner.yaml:/testenv/runner.yaml:ro,Z
+      - ../tests/fixtures/actions/build.sh:/usr/local/bin/build.sh:ro,Z
+
+  hurl:
+    image: ghcr.io/orange-opensource/hurl:7.1.0
+    profiles: [test]
+    networks: [pages]
+    working_dir: /tests/hurl
+    command: ["--test", "--jobs", "1", "--variables-file", "vars.env", "/testenv/wait.hurl", "--glob", "*.hurl"]
+    volumes:
+      - ../tests/hurl:/tests/hurl:ro,Z
+      - ./wait.hurl:/testenv/wait.hurl:ro,Z
+
+volumes:
+  forgejo-data:
+  oauth2-proxy-config:
+  runner-secret:
