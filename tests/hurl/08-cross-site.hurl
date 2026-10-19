@@ -1,7 +1,9 @@
 # What stops other websites from using a logged-in visitor's session: SameSite=Lax cookies
-# (browsers don't send the session on cross-site embeds or fetches), CORP same-origin on content,
-# no CORS headers, frame-ancestors. Hurl itself always sends the cookie, so these tests check the
-# headers that make browsers refuse; enforcement is the browser's job.
+# (browsers don't send the session on cross-site embeds, frames or fetches), CORP same-origin on
+# content, no CORS headers. Framing is not blocked by a header (no frame-ancestors or
+# X-Frame-Options); a cross-site frame only gets the login redirect because SameSite=Lax withholds
+# the cookie. Hurl itself always sends the cookie, so these tests check the headers that make
+# browsers refuse; enforcement is the browser's job.
 
 # --- Log in to Forgejo -------------------------------------------------------
 POST {{git}}/user/login

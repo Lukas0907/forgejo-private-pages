@@ -97,5 +97,5 @@ HTTP 200
 GET {{pages}}/{{owner}}/{{private_repo}}/
 HTTP 302
 [Asserts]
-header "Location" == "{{pages}}/_oauth2/start?rd=/{{owner}}/{{private_repo}}/"
+header "Location" startsWith "{{git}}/login/oauth/authorize"
 body not contains "{{secret_marker}}"

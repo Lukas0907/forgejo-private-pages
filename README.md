@@ -7,7 +7,7 @@ Files are served from the `forgejo-pages` branch by default.
 ## Flow
 
 1. nginx asks oauth2-proxy (`auth_request /_oauth2/auth`) whether there is a session.
-   If there is no cookie, there is a redirect to `/_oauth2/start` which then redirects to Forgejo's oauth authorize endpoint.
+   If there is no session, nginx starts the login at oauth2-proxy's `/_oauth2/start` (passing the requested URI in `X-Auth-Request-Redirect`), which redirects to Forgejo's oauth authorize endpoint.
 2. After the login, oauth2-proxy gets a Forgejo access token (`read:repository read:user`) and stores it in its own encrypted cookie.
 3. On later requests the auth check returns the Forgejo token in `X-Auth-Request-Access-Token`. nginx sends it to Forgejo as `Authorization: Bearer`.
    If oauth2-proxy refreshed the session, nginx passes its new `Set-Cookie` on to the browser.
@@ -19,7 +19,8 @@ Files are served from the `forgejo-pages` branch by default.
 A script on any repo's page can read every other repo's page the visitor has access to.
 This can be fixed by having one origin for a repo (similar to GitHub), however, this complicates the setup.
 
-Note: The `/_oauth2/userinfo` endpoint is blocked to prevent scripts from accessing visitor information.
+Note: Of oauth2-proxy's endpoints only `/_oauth2/callback` is reachable from outside.
+Among others, `/_oauth2/userinfo` is blocked to prevent scripts from accessing visitor information.
 
 ## Setup
 

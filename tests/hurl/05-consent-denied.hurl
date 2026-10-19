@@ -50,13 +50,15 @@ callback: header "Location"
 [Asserts]
 header "Location" startsWith "{{pages}}/_oauth2/callback?error=access_denied"
 
+# oauth2-proxy's error page is replaced by nginx's plain one
 GET {{callback}}
-HTTP *
+HTTP 403
 [Asserts]
-status >= 400
+header "Content-Type" startsWith "text/plain"
+body == "Login failed\n"
 cookie "_pages" not exists
 
 GET {{pages}}/{{owner}}/{{private_repo}}/
 HTTP 302
 [Asserts]
-header "Location" == "{{pages}}/_oauth2/start?rd=/{{owner}}/{{private_repo}}/"
+header "Location" startsWith "{{git}}/login/oauth/authorize"
