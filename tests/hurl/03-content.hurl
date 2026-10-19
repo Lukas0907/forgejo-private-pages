@@ -145,6 +145,50 @@ HTTP 404
 GET {{pages}}/{{owner}}/{{private_repo}}/sub%2F.hidden/file.txt
 HTTP 404
 
+# Backslashes: nginx's filter only looks for a dot after "/" or "%2f", so these reach Forgejo.
+# They must not, if Forgejo turns "\" into "/" in the tree path.
+GET {{pages}}/{{owner}}/{{private_repo}}/%5c.env
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
+GET {{pages}}/{{owner}}/{{private_repo}}/x%5C..%5C.env
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
+GET {{pages}}/{{owner}}/{{private_repo}}/sub%5c.hidden/file.txt
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
+GET {{pages}}/{{owner}}/{{private_repo}}/sub%5C.hidden%5Cfile.txt
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
+GET {{pages}}/{{owner}}/{{private_repo}}/sub%5c%2ehidden/file.txt
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
+GET {{pages}}/{{owner}}/{{private_repo}}/sub\\.hidden/file.txt
+[Options]
+path-as-is: true
+HTTP 404
+[Asserts]
+body not contains "{{secret_marker}}"
+
 GET {{pages}}/{{owner}}/{{private_repo}}/v1.2/page
 HTTP 200
 [Asserts]
