@@ -1,0 +1,33 @@
+# !!! Security workaround !!!
+# Do not set the `Host` header as "$http_host".
+#
+# "$http_host" is the Host header exactly as supplied by the client.
+# This is unsafe when a client sends an absolute-form request target together
+# with a different Host header, for example:
+#
+#     GET https://example.com/ HTTP/1.1
+#     Host: malformedhost
+#
+# In such a case, passing "$http_host" upstream exposes the raw client-supplied
+# Host value ("malformedhost") to the backend application, even though it does
+# not match the effective request target. Applications often use HTTP_HOST for
+# redirects, absolute URL generation, virtual host routing, or security checks;
+# forwarding the raw Host header can therefore lead to incorrect or unsafe
+# behaviour.
+#
+# Newer nginx versions (since 1.30.0) introduce variables "$is_request_port" and
+# "$request_port", allowing `Host` to be constructed as:
+#     $host$is_request_port$request_port
+#
+# In stable/oldstable packages we use "$host" as a security workaround.
+# It avoids forwarding an untrusted raw Host header to the backend.
+#
+# Note: this changes behaviour compared to previous versions, because "$host"
+# does not preserve the client-supplied port, while "$http_host" typically
+# does. Existing deployments that rely on "$http_host" containing a port number
+# may therefore break or behave differently after this change.
+
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;

@@ -63,6 +63,7 @@ services:
     volumes:
       - ../conf/forgejo-private-pages.conf:/etc/nginx/conf.d/default.conf:ro,Z
       - ../conf/forgejo-pages-mime.conf:/etc/nginx/forgejo-pages-mime.conf:ro,Z
+      - ../conf/proxy_params:/etc/nginx/proxy_params:ro,Z
 
   runner:
     image: code.forgejo.org/forgejo/runner:11
